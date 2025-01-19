@@ -13,7 +13,7 @@ def getlinks():
     urls = ['https://www.sxlib.org.cn/dfzy/qyqq/jmqqjm/jb/ctj/',
             'https://www.sxlib.org.cn/dfzy/qyqq/jmqqjm/jb/xdj/']
     all_links = []
-    for url in urls[:1]:
+    for url in urls:  # Remove [:1] to process both URLs
         tab = browser.new_tab()
         tab.get(url)
         time.sleep(2)  # Allow time for page to load
@@ -28,7 +28,7 @@ def getlinks():
             continue
 
         links = []
-        pagecount=1
+        # pagecount = 1  # Remove this line to process all pages
         for p in range(1, pagecount + 1):
             if p != 1:
                 try:
@@ -40,12 +40,12 @@ def getlinks():
                     break
 
             try:
-                uls = tab.ele('.list_right_ul_list').eles('t:li')
-                for ul in uls:
-                    for e in ul.children():
-                        link = e.ele("t:b").ele("t:a").link
-                        print('urls', link)
-                        links.append(link)
+                # Directly find all 'li' elements under '.list_right_ul_list'
+                lis = tab.eles('.list_right_ul_list li')
+                for li in lis:
+                    link = li.ele("t:b").ele("t:a").link
+                    print('urls', link)
+                    links.append(link)
             except Exception as e:
                 print(f"Error on page {p}: {e}")
 
@@ -81,21 +81,28 @@ def getdetail(link):
     return result
 
 def save_data(data, output_format, filename):
+    # Create the "results" directory if it doesn't exist
+    results_dir = "result"
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    filepath = os.path.join(results_dir, filename)  # Filepath in "results" dir
+
     if output_format == 'csv':
         df = pd.DataFrame(data)
-        df.to_csv(filename, index=False)
-        print(f"Data saved to {filename} (CSV format)")
+        df.to_csv(filepath, index=False)
+        print(f"Data saved to {filepath} (CSV format)")
     elif output_format == 'json':
-        with open(filename, 'w', encoding='utf-8') as f:
+        with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-        print(f"Data saved to {filename} (JSON format)")
+        print(f"Data saved to {filepath} (JSON format)")
     else:
         print("Invalid output format. Supported formats are 'csv' and 'json'.")
 
 # Main execution
 if __name__ == "__main__":
     # Get configuration from environment variables
-    output_format = os.getenv('OUTPUT_FORMAT', 'json').lower()  # Default: csv
+    output_format = os.getenv('OUTPUT_FORMAT', 'json').lower()  # Default: json
     output_filename = os.getenv('OUTPUT_FILENAME', 'data')  # Default: data
 
     # You can still override with command-line arguments if needed
