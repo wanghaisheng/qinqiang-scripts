@@ -13,7 +13,7 @@ def getlinks():
     urls = ['https://www.sxlib.org.cn/dfzy/qyqq/jmqqjm/jb/ctj/',
             'https://www.sxlib.org.cn/dfzy/qyqq/jmqqjm/jb/xdj/']
     all_links = []
-    for url in urls:
+    for url in urls[:1]:
         tab = browser.new_tab()
         tab.get(url)
         time.sleep(2)  # Allow time for page to load
@@ -28,6 +28,7 @@ def getlinks():
             continue
 
         links = []
+        pagecount=1
         for p in range(1, pagecount + 1):
             if p != 1:
                 try:
