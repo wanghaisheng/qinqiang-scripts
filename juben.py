@@ -29,6 +29,7 @@ def getlinks():
             continue
 
         links = []
+        pagecount=5
         for p in range(1, pagecount + 1):
             if p != 1:
                 try:
@@ -45,12 +46,12 @@ def getlinks():
                 # ulrs=t.children()
                 # print('111',urls.text)
                 # return 
-                for e in uls:
-                    # print('=====',e,e.text)
+                for index,e in enumerate(uls):
+                    print('====page=',p,index,e,e.text)
                     if '名称' in e.text and '责任者' in e.text:
                         continue
                     link = e.ele("t:b").ele("t:a").link
-                    print('url', link)
+                    # print('url', link)
                     links.append(link)
             except Exception as e:
                 print(f"Error on page {p}: {e}")
