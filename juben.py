@@ -44,6 +44,8 @@ def getlinks():
                 for ul in uls:
                     for e in ul.children():
                         print('=====',e,e.text)
+                        if '名称' in e.text and '责任者' in e.text:
+                            continue
                         link = e.ele("t:b").ele("t:a").link
                         print('urls', link)
                         links.append(link)
