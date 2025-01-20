@@ -11,8 +11,9 @@ import os
 browser = setup_chrome()
 
 def getlinks():
-    urls = ['https://www.sxlib.org.cn/dfzy/qyqq/jmqqjm/jb/ctj/',
-            'https://www.sxlib.org.cn/dfzy/qyqq/jmqqjm/jb/xdj/']
+    urls = ['https://www.sxlib.org.cn/dfzy/qyqq/jmqqjm/jb/ctj/'
+            # ,'https://www.sxlib.org.cn/dfzy/qyqq/jmqqjm/jb/xdj/'
+           ]
     all_links = []
     for url in urls:
         tab = browser.new_tab()
@@ -29,7 +30,7 @@ def getlinks():
             continue
 
         links = []
-        pagecount=5
+        # pagecount=5
         for p in range(1, pagecount + 1):
             if p != 1:
                 try:
