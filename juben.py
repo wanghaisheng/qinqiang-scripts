@@ -43,6 +43,7 @@ def getlinks():
                 uls = tab.ele('.list_right_ul_list').children()
                 for ul in uls:
                     for e in ul.children():
+                        print('=====',e,e.text)
                         link = e.ele("t:b").ele("t:a").link
                         print('urls', link)
                         links.append(link)
