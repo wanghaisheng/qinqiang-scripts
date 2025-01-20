@@ -44,7 +44,7 @@ def getlinks():
                 # print('00000',t.text)
                 # ulrs=t.children()
                 # print('111',urls.text)
-                return 
+                # return 
                 for ul in uls:
                     print('=====',e,e.text)
                     if '名称' in e.text and '责任者' in e.text:
