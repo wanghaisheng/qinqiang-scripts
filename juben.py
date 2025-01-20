@@ -1,12 +1,19 @@
-
 # https://www.sxlib.org.cn/was5/web/search
-
+print('is starting=========')
 from getbrowser import setup_chrome
 import pandas as pd
 import json
 import time
 import argparse
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(
+    filename='juben_scrape.log',  # Log file name
+    level=logging.INFO,  # Log level (INFO, DEBUG, WARNING, ERROR, CRITICAL)
+    format='%(asctime)s - %(levelname)s - %(message)s'  # Log format
+)
 
 browser = setup_chrome()
 
@@ -15,39 +22,42 @@ def getlinks():
             'https://www.sxlib.org.cn/dfzy/qyqq/jmqqjm/jb/xdj/']
     all_links = []
     for url in urls:
+        logging.info(f"Processing URL: {url}")  # Log URL
         tab = browser.new_tab()
         tab.get(url)
-        time.sleep(2)  # Allow time for page to load
+        time.sleep(2)
 
-        # Get the total number of records and calculate the number of pages
         try:
             c = tab.ele('.list_right_mid').text
-            print('==', c)
+            logging.info(f"  Raw text from .list_right_mid: {c}")  # Log raw text
             c = c.split('记录')[-1].split('条')[0]
             pagecount = int(int(c) / 20) + 1
-        except:
+            logging.info(f"  Calculated page count: {pagecount}")  # Log page count
+        except Exception as e:
+            logging.error(f"  Error getting page count: {e}")
             continue
 
         links = []
         for p in range(1, pagecount + 1):
+            logging.info(f"  Processing page: {p} of {pagecount}")
             if p != 1:
                 try:
-                    # Find the second to last 'a' element within '.fya' and click it
                     tab.ele('.fya').children()[-3].click()
-                    time.sleep(2)  # Allow time for page to load
+                    logging.info("    Clicked next page button")
+                    time.sleep(2)
                 except Exception as e:
-                    print(f"Error clicking next page: {e}")
+                    logging.error(f"    Error clicking next page: {e}")
                     break
 
             try:
-                uls = tab.eles('.list_right_ul_list')
-                for ul in uls:
-                    for e in ul.children():
-                        link = e.ele("t:b").ele("t:a").link
-                        print('urls', link)
-                        links.append(link)
+                lis = tab.ele('.list_right_ul_list').children()
+                logging.info(f"    Found {len(lis)} list items on this page")
+                for i, li in enumerate(lis):
+                    link = li.ele("t:b").ele("t:a").link
+                    logging.info(f"      Link {i+1}: {link}")
+                    links.append(link)
             except Exception as e:
-                print(f"Error on page {p}: {e}")
+                logging.error(f"    Error processing links on page {p}: {e}")
 
         all_links.extend(links)
         tab.close()
@@ -55,22 +65,30 @@ def getlinks():
     return all_links
 
 def getdetail(link):
+    logging.info(f"Getting details for link: {link}")
     tab = browser.new_tab()
     tab.get(link)
     time.sleep(2)
 
     try:
         img = tab.ele('.article_main').ele("t:img").link
-    except:
+        logging.info(f"  Found image: {img}")
+    except Exception as e:
+        logging.warning(f"  Image not found: {e}")
         img = ''
     try:
         content = tab.ele('.article_main').text
-    except:
+        logging.info(f"  Content length: {len(content)} characters")
+    except Exception as e:
+        logging.error(f"  Error getting content: {e}")
         content = ''
     try:
         name = tab.ele('#article_title').text.replace("《", '').replace("》", '')
-    except:
+        logging.info(f"  Found name: {name}")
+    except Exception as e:
+        logging.error(f"  Error getting name: {e}")
         name = ''
+
     result = {
         "link": link,
         "img": img,
@@ -81,25 +99,31 @@ def getdetail(link):
     return result
 
 def save_data(data, output_format, filename):
+    results_dir = "results"
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+        logging.info(f"Created results directory: {results_dir}")
+
+    filepath = os.path.join(results_dir, filename)
+
     if output_format == 'csv':
         df = pd.DataFrame(data)
-        df.to_csv(filename, index=False)
-        print(f"Data saved to {filename} (CSV format)")
+        df.to_csv(filepath, index=False)
+        logging.info(f"Data saved to {filepath} (CSV format)")
     elif output_format == 'json':
-        with open(filename, 'w', encoding='utf-8') as f:
+        with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-        print(f"Data saved to {filename} (JSON format)")
+        logging.info(f"Data saved to {filepath} (JSON format)")
     else:
-        print("Invalid output format. Supported formats are 'csv' and 'json'.")
+        logging.error(f"Invalid output format: {output_format}")
 
 # Main execution
 if __name__ == "__main__":
     # Get configuration from environment variables
-    output_format = os.getenv('OUTPUT_FORMAT', 'json').lower()  # Default: csv
-    output_filename = os.getenv('OUTPUT_FILENAME', 'data')  # Default: data
+    output_format = os.getenv('OUTPUT_FORMAT', 'json').lower()
+    output_filename = os.getenv('OUTPUT_FILENAME', 'data')
 
-    # You can still override with command-line arguments if needed
-    parser = argparse.ArgumentParser(description="Scrape data from sxlib.org.cn and save it as CSV or JSON.")
+    parser = argparse.ArgumentParser(description="Scrape data from sxlib.org.cn")
     parser.add_argument("-f", "--format", choices=['csv', 'json'],
                         help="Override OUTPUT_FORMAT environment variable")
     parser.add_argument("-o", "--output",
@@ -111,17 +135,20 @@ if __name__ == "__main__":
     if args.output:
         output_filename = args.output
 
+    logging.info("Starting script")
     all_links = getlinks()
-    print(f"Found {len(all_links)} links.")
+    logging.info(f"Found {len(all_links)} links in total.")
 
     results = []
-    for link in all_links:
+    for i, link in enumerate(all_links):
+        logging.info(f"Processing link {i+1} of {len(all_links)}")
         try:
             detail = getdetail(link)
             results.append(detail)
         except Exception as e:
-            print(f"Error processing link {link}: {e}")
+            logging.error(f"Error processing link {link}: {e}")
 
     save_data(results, output_format, output_filename + '.' + output_format)
+    logging.info("Script finished")
 
     browser.quit()
