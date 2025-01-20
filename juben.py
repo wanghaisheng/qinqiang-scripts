@@ -30,7 +30,7 @@ def getlinks():
             continue
 
         links = []
-        # pagecount=5
+        pagecount=30
         for p in range(1, pagecount + 1):
             time.sleep(3)
             
