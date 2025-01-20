@@ -40,19 +40,18 @@ def getlinks():
                     break
 
             try:
-                t = tab.ele('.list_right').ele('.list_right_ul_list')
-                print('00000',t.text)
-                ulrs=t.children()
-                print('111',urls.text)
+                ulrs = tab.ele('.list_right').ele('.list_right_ul_list').children()
+                # print('00000',t.text)
+                # ulrs=t.children()
+                # print('111',urls.text)
                 return 
                 for ul in uls:
-                    for e in ul.children():
-                        print('=====',e,e.text)
-                        if '名称' in e.text and '责任者' in e.text:
-                            continue
-                        link = e.ele("t:b").ele("t:a").link
-                        print('urls', link)
-                        links.append(link)
+                    print('=====',e,e.text)
+                    if '名称' in e.text and '责任者' in e.text:
+                        continue
+                    link = e.ele("t:b").ele("t:a").link
+                    print('urls', link)
+                    links.append(link)
             except Exception as e:
                 print(f"Error on page {p}: {e}")
 
