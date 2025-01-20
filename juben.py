@@ -40,7 +40,7 @@ def getlinks():
                     break
 
             try:
-                uls = tab.ele('.list_right_mid').next().children()
+                uls = tab.ele('.list_right').ele('.list_right_ul_list').children()
                 for ul in uls:
                     for e in ul.children():
                         print('=====',e,e.text)
