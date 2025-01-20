@@ -40,7 +40,7 @@ def getlinks():
                     break
 
             try:
-                uls = tab.eles('.list_right_ul_list').children()
+                uls = tab.ele('.list_right_ul_list').children()
                 for ul in uls:
                     for e in ul.children():
                         link = e.ele("t:b").ele("t:a").link
