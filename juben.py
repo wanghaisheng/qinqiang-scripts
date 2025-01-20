@@ -32,6 +32,8 @@ def getlinks():
         links = []
         # pagecount=5
         for p in range(1, pagecount + 1):
+            time.sleep(3)
+            
             if p != 1:
                 try:
                     # Find the second to last 'a' element within '.fya' and click it
@@ -48,7 +50,6 @@ def getlinks():
                 # print('111',urls.text)
                 # return 
                 for index,e in enumerate(uls):
-                    time.sleep(3)
                     print('====page=',p,index,e,e.text)
                     if '名称' in e.text and '责任者' in e.text:
                         continue
