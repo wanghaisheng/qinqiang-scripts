@@ -46,11 +46,11 @@ def getlinks():
                 # print('111',urls.text)
                 # return 
                 for e in uls:
-                    print('=====',e,e.text)
+                    # print('=====',e,e.text)
                     if '名称' in e.text and '责任者' in e.text:
                         continue
                     link = e.ele("t:b").ele("t:a").link
-                    print('urls', link)
+                    print('url', link)
                     links.append(link)
             except Exception as e:
                 print(f"Error on page {p}: {e}")
@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
     all_links = getlinks()
     print(f"Found {len(all_links)} links.")
-
+    
     results = []
     for link in all_links:
         try:
