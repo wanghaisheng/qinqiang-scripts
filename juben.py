@@ -1,12 +1,11 @@
-
-# https://www.sxlib.org.cn/was5/web/search
-
 from getbrowser import setup_chrome
 import pandas as pd
 import json
 import time
 import argparse
 import os
+from threading import Thread
+import queue
 
 browser = setup_chrome()
 
@@ -30,7 +29,7 @@ def getlinks():
             continue
 
         links = []
-        pagecount=25
+        # pagecount=25
         for p in range(1, pagecount + 1):
             time.sleep(3)
             
@@ -54,8 +53,9 @@ def getlinks():
                     if '名称' in e.text and '责任者' in e.text:
                         continue
                     link = e.ele("t:b").ele("t:a").link
+                    if link:
                     # print('url', link)
-                    links.append(link)
+                        links.append(link)
             except Exception as e:
                 print(f"Error on page {p}: {e}")
 
@@ -64,32 +64,59 @@ def getlinks():
 
     return all_links
 
-def getdetail(link):
-    tab = browser.new_tab()
-    tab.get(link)
-    time.sleep(2)
-
+def get_detail_single(link, browser_queue, results_queue):
+    """Process a single detail page."""
     try:
-        img = tab.ele('.article_main').ele("t:img").link
-    except:
-        img = ''
-    try:
-        content = tab.ele('.article_main').text
-    except:
-        content = ''
-    try:
-        name = tab.ele('#article_title').text.replace("《", '').replace("》", '')
-    except:
-        name = ''
-    result = {
-        "link": link,
-        "img": img,
-        "name": name,
-        "content": content
-    }
-    tab.close()
-    return result
-
+        tab = browser_queue.get()
+        tab.get(link)
+        time.sleep(2)
+        print('process page', link)
+        try:
+            img = tab.ele('.article_main').ele("t:img").link
+        except:
+            img = ''
+        try:
+            content = tab.ele('.article_main').text
+        except:
+            content = ''
+        try:
+            name = tab.ele('#article_title').text.replace("《", '').replace("》", '')
+        except:
+            name = ''
+        result = {
+            "link": link,
+            "img": img,
+            "name": name,
+            "content": content
+        }
+        results_queue.put(result)
+    except Exception as e:
+        print(f"Error processing link {link}: {e}")
+    finally:
+        browser_queue.put(tab) # put the browser back
+def getdetail_threaded(links, num_threads=5):
+    """Get details concurrently using threads."""
+    browser_queue = queue.Queue()
+    for _ in range(num_threads):
+        browser_queue.put(browser.new_tab()) # create browsers
+    results_queue = queue.Queue()
+    threads = []
+    
+    for link in links:
+        thread = Thread(target=get_detail_single, args=(link,browser_queue, results_queue))
+        threads.append(thread)
+        thread.start()
+    
+    for thread in threads:
+        thread.join() # wait for all to complete
+    results = []
+    while not results_queue.empty():
+        results.append(results_queue.get())
+    
+    while not browser_queue.empty(): # close all browser tabs
+        tab = browser_queue.get()
+        tab.close()
+    return results
 def save_data(data, output_format, filename):
     if output_format == 'csv':
         df = pd.DataFrame(data)
@@ -102,10 +129,10 @@ def save_data(data, output_format, filename):
     else:
         print("Invalid output format. Supported formats are 'csv' and 'json'.")
 
-# Main execution
+
 if __name__ == "__main__":
-    # Get configuration from environment variables
-    output_format = os.getenv('OUTPUT_FORMAT', 'json').lower()  # Default: csv
+     # Get configuration from environment variables
+    output_format = os.getenv('OUTPUT_FORMAT', 'csv').lower()  # Default: csv
     output_filename = os.getenv('OUTPUT_FILENAME', 'data')  # Default: data
 
     # You can still override with command-line arguments if needed
@@ -120,17 +147,11 @@ if __name__ == "__main__":
         output_format = args.format
     if args.output:
         output_filename = args.output
-
+    
     all_links = getlinks()
     print(f"Found {len(all_links)} links.")
     
-    results = []
-    for link in all_links:
-        try:
-            detail = getdetail(link)
-            results.append(detail)
-        except Exception as e:
-            print(f"Error processing link {link}: {e}")
+    results = getdetail_threaded(all_links)
 
     save_data(results, output_format, output_filename + '.' + output_format)
 
